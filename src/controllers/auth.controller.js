@@ -36,11 +36,13 @@ class AuthController {
                 data: { user, token }
             });
         } catch (error) {
-            res.status(500).json({
-                success: false,
-                message: 'Unable to register user'
-            });
-        }
+    console.error('REGISTER ERROR:', error);
+
+    res.status(500).json({
+        success: false,
+        message: 'Unable to register user'
+    });
+}
     }
 
     static async login(req, res) {
@@ -74,11 +76,13 @@ class AuthController {
                 data: { user, token }
             });
         } catch (error) {
-            res.status(500).json({
-                success: false,
-                message: 'Unable to login'
-            });
-        }
+    console.error('LOGIN ERROR:', error);
+
+    res.status(500).json({
+        success: false,
+        message: 'Unable to login'
+    });
+}
     }
 
     static async me(req, res) {
