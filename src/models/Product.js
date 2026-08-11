@@ -1,39 +1,68 @@
+
 const { pool } = require('../config/database');
 
 class Product {
-    static async getAll() {
+
+    // ============================================
+    // GET ONLY PRODUCTS BELONGING TO USER
+    // ============================================
+
+    static async getAll(userId) {
+
         const [rows] = await pool.execute(`
             SELECT 
                 p.*,
                 c.category_name,
                 s.supplier_name,
-                u.fullname as created_by_name
+                u.fullname AS created_by_name
             FROM products p
-            JOIN categories c ON p.category_id = c.id
-            JOIN suppliers s ON p.supplier_id = s.id
-            JOIN users u ON p.created_by = u.id
+            JOIN categories c
+                ON p.category_id = c.id
+            JOIN suppliers s
+                ON p.supplier_id = s.id
+            JOIN users u
+                ON p.created_by = u.id
+            WHERE p.created_by = ?
             ORDER BY p.id DESC
-        `);
+        `, [userId]);
+
         return rows;
     }
 
-    static async getById(id) {
+
+    // ============================================
+    // GET ONE PRODUCT ONLY IF USER OWNS IT
+    // ============================================
+
+    static async getById(id, userId) {
+
         const [rows] = await pool.execute(`
             SELECT 
                 p.*,
                 c.category_name,
                 s.supplier_name,
-                u.fullname as created_by_name
+                u.fullname AS created_by_name
             FROM products p
-            JOIN categories c ON p.category_id = c.id
-            JOIN suppliers s ON p.supplier_id = s.id
-            JOIN users u ON p.created_by = u.id
+            JOIN categories c
+                ON p.category_id = c.id
+            JOIN suppliers s
+                ON p.supplier_id = s.id
+            JOIN users u
+                ON p.created_by = u.id
             WHERE p.id = ?
-        `, [id]);
+              AND p.created_by = ?
+        `, [id, userId]);
+
         return rows[0] || null;
     }
 
+
+    // ============================================
+    // CREATE PRODUCT
+    // ============================================
+
     static async create(productData) {
+
         const {
             product_name,
             category_id,
@@ -46,48 +75,165 @@ class Product {
         } = productData;
 
         const [result] = await pool.execute(`
-            INSERT INTO products 
-            (product_name, category_id, supplier_id, price, quantity, minimum_stock, description, created_by)
+            INSERT INTO products
+            (
+                product_name,
+                category_id,
+                supplier_id,
+                price,
+                quantity,
+                minimum_stock,
+                description,
+                created_by
+            )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `, [product_name, category_id, supplier_id, price, quantity || 0, minimum_stock || 5, description, created_by]);
+        `, [
+            product_name,
+            category_id,
+            supplier_id,
+            price,
+            quantity || 0,
+            minimum_stock || 5,
+            description,
+            created_by
+        ]);
 
         return result.insertId;
     }
 
-    static async update(id, updateData) {
+
+    // ============================================
+    // UPDATE ONLY USER'S PRODUCT
+    // ============================================
+
+    static async update(id, updateData, userId) {
+
         const fields = [];
         const params = [];
-        const allowedFields = ['product_name', 'category_id', 'supplier_id', 'price', 'quantity', 'minimum_stock', 'description'];
-        
+
+        const allowedFields = [
+            'product_name',
+            'category_id',
+            'supplier_id',
+            'price',
+            'quantity',
+            'minimum_stock',
+            'description'
+        ];
+
         for (const field of allowedFields) {
+
             if (updateData[field] !== undefined) {
                 fields.push(`${field} = ?`);
                 params.push(updateData[field]);
             }
         }
 
-        if (fields.length === 0) return false;
+        if (fields.length === 0) {
+            return false;
+        }
 
         params.push(id);
+        params.push(userId);
+
         const [result] = await pool.execute(
-            `UPDATE products SET ${fields.join(', ')} WHERE id = ?`,
+            `UPDATE products
+             SET ${fields.join(', ')}
+             WHERE id = ?
+               AND created_by = ?`,
             params
         );
+
         return result.affectedRows > 0;
     }
 
-    static async delete(id) {
-        const [result] = await pool.execute('DELETE FROM products WHERE id = ?', [id]);
+
+    // ============================================
+    // DELETE ONLY USER'S PRODUCT
+    // ============================================
+
+    static async delete(id, userId) {
+
+        const [result] = await pool.execute(
+            `DELETE FROM products
+             WHERE id = ?
+               AND created_by = ?`,
+            [id, userId]
+        );
+
         return result.affectedRows > 0;
     }
 
-    static async getLowStock() {
-        const [rows] = await pool.execute('SELECT * FROM low_stock_alert');
+
+    // ============================================
+    // LOW STOCK - ONLY USER'S PRODUCTS
+    // ============================================
+
+    static async getLowStock(userId) {
+
+        const [rows] = await pool.execute(`
+            SELECT
+                p.id,
+                p.product_name,
+                p.quantity,
+                p.minimum_stock,
+                c.category_name,
+                s.supplier_name,
+                (p.minimum_stock - p.quantity)
+                    AS shortage_quantity,
+                CASE
+                    WHEN p.quantity = 0
+                        THEN 'Out of Stock'
+                    WHEN p.quantity <= p.minimum_stock
+                        THEN 'Low Stock'
+                    ELSE 'In Stock'
+                END AS stock_status
+            FROM products p
+            JOIN categories c
+                ON p.category_id = c.id
+            JOIN suppliers s
+                ON p.supplier_id = s.id
+            WHERE p.created_by = ?
+              AND p.quantity <= p.minimum_stock
+            ORDER BY shortage_quantity DESC
+        `, [userId]);
+
         return rows;
     }
 
-    static async getSummary() {
-        const [rows] = await pool.execute('SELECT * FROM inventory_summary');
+
+    // ============================================
+    // SUMMARY - ONLY USER'S PRODUCTS
+    // ============================================
+
+    static async getSummary(userId) {
+
+        const [rows] = await pool.execute(`
+            SELECT
+                p.id,
+                p.product_name,
+                p.quantity AS current_stock,
+                p.minimum_stock,
+                p.price,
+                (p.price * p.quantity) AS stock_value,
+                c.category_name,
+                s.supplier_name,
+                CASE
+                    WHEN p.quantity = 0
+                        THEN 'Out of Stock'
+                    WHEN p.quantity <= p.minimum_stock
+                        THEN 'Low Stock'
+                    ELSE 'In Stock'
+                END AS stock_status
+            FROM products p
+            JOIN categories c
+                ON p.category_id = c.id
+            JOIN suppliers s
+                ON p.supplier_id = s.id
+            WHERE p.created_by = ?
+            ORDER BY p.id DESC
+        `, [userId]);
+
         return rows;
     }
 }

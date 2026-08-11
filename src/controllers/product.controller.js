@@ -1,15 +1,31 @@
+
 const Product = require('../models/Product');
 
 class ProductController {
+
+    // ============================================
+    // GET ALL USER PRODUCTS
+    // ============================================
+
     static async getAll(req, res) {
+
         try {
-            const products = await Product.getAll();
+
+            const userId = req.user.id;
+
+            const products =
+                await Product.getAll(userId);
+
             res.json({
                 success: true,
                 count: products.length,
                 data: products
             });
+
         } catch (error) {
+
+            console.error('GET PRODUCTS ERROR:', error);
+
             res.status(500).json({
                 success: false,
                 message: 'Unable to retrieve products'
@@ -17,20 +33,40 @@ class ProductController {
         }
     }
 
+
+    // ============================================
+    // GET ONE USER PRODUCT
+    // ============================================
+
     static async getById(req, res) {
+
         try {
-            const product = await Product.getById(req.params.id);
+
+            const userId = req.user.id;
+
+            const product =
+                await Product.getById(
+                    req.params.id,
+                    userId
+                );
+
             if (!product) {
+
                 return res.status(404).json({
                     success: false,
                     message: 'Product not found'
                 });
             }
+
             res.json({
                 success: true,
                 data: product
             });
+
         } catch (error) {
+
+            console.error('GET PRODUCT ERROR:', error);
+
             res.status(500).json({
                 success: false,
                 message: 'Unable to retrieve product'
@@ -38,8 +74,15 @@ class ProductController {
         }
     }
 
+
+    // ============================================
+    // CREATE USER PRODUCT
+    // ============================================
+
     static async create(req, res) {
+
         try {
+
             const {
                 product_name,
                 category_id,
@@ -50,32 +93,51 @@ class ProductController {
                 description
             } = req.body;
 
-            if (!product_name || !category_id || !supplier_id || price === undefined) {
+            if (
+                !product_name ||
+                !category_id ||
+                !supplier_id ||
+                price === undefined
+            ) {
+
                 return res.status(400).json({
                     success: false,
-                    message: 'Product name, category, supplier, and price are required'
+                    message:
+                        'Product name, category, supplier, and price are required'
                 });
             }
 
-            const productId = await Product.create({
-                product_name,
-                category_id,
-                supplier_id,
-                price,
-                quantity,
-                minimum_stock,
-                description,
-                created_by: req.user.id
-            });
+            // NEVER get created_by from req.body.
+            // Get it from the authenticated JWT.
 
-            const product = await Product.getById(productId);
+            const productId =
+                await Product.create({
+                    product_name,
+                    category_id,
+                    supplier_id,
+                    price,
+                    quantity,
+                    minimum_stock,
+                    description,
+                    created_by: req.user.id
+                });
+
+            const product =
+                await Product.getById(
+                    productId,
+                    req.user.id
+                );
 
             res.status(201).json({
                 success: true,
                 message: 'Product created successfully',
                 data: product
             });
+
         } catch (error) {
+
+            console.error('CREATE PRODUCT ERROR:', error);
+
             res.status(500).json({
                 success: false,
                 message: 'Unable to create product'
@@ -83,23 +145,49 @@ class ProductController {
         }
     }
 
+
+    // ============================================
+    // UPDATE USER PRODUCT
+    // ============================================
+
     static async update(req, res) {
+
         try {
-            const updated = await Product.update(req.params.id, req.body);
+
+            const userId = req.user.id;
+
+            const updated =
+                await Product.update(
+                    req.params.id,
+                    req.body,
+                    userId
+                );
+
             if (!updated) {
+
                 return res.status(404).json({
                     success: false,
-                    message: 'Product not found or no changes made'
+                    message:
+                        'Product not found or no changes made'
                 });
             }
 
-            const product = await Product.getById(req.params.id);
+            const product =
+                await Product.getById(
+                    req.params.id,
+                    userId
+                );
+
             res.json({
                 success: true,
                 message: 'Product updated successfully',
                 data: product
             });
+
         } catch (error) {
+
+            console.error('UPDATE PRODUCT ERROR:', error);
+
             res.status(500).json({
                 success: false,
                 message: 'Unable to update product'
@@ -107,20 +195,40 @@ class ProductController {
         }
     }
 
+
+    // ============================================
+    // DELETE USER PRODUCT
+    // ============================================
+
     static async delete(req, res) {
+
         try {
-            const deleted = await Product.delete(req.params.id);
+
+            const userId = req.user.id;
+
+            const deleted =
+                await Product.delete(
+                    req.params.id,
+                    userId
+                );
+
             if (!deleted) {
+
                 return res.status(404).json({
                     success: false,
                     message: 'Product not found'
                 });
             }
+
             res.json({
                 success: true,
                 message: 'Product deleted successfully'
             });
+
         } catch (error) {
+
+            console.error('DELETE PRODUCT ERROR:', error);
+
             res.status(500).json({
                 success: false,
                 message: 'Unable to delete product'
@@ -128,15 +236,30 @@ class ProductController {
         }
     }
 
+
+    // ============================================
+    // LOW STOCK
+    // ============================================
+
     static async getLowStock(req, res) {
+
         try {
-            const products = await Product.getLowStock();
+
+            const products =
+                await Product.getLowStock(
+                    req.user.id
+                );
+
             res.json({
                 success: true,
                 count: products.length,
                 data: products
             });
+
         } catch (error) {
+
+            console.error('LOW STOCK ERROR:', error);
+
             res.status(500).json({
                 success: false,
                 message: 'Unable to get low stock products'
@@ -144,15 +267,30 @@ class ProductController {
         }
     }
 
+
+    // ============================================
+    // PRODUCT SUMMARY
+    // ============================================
+
     static async getSummary(req, res) {
+
         try {
-            const products = await Product.getSummary();
+
+            const products =
+                await Product.getSummary(
+                    req.user.id
+                );
+
             res.json({
                 success: true,
                 count: products.length,
                 data: products
             });
+
         } catch (error) {
+
+            console.error('SUMMARY ERROR:', error);
+
             res.status(500).json({
                 success: false,
                 message: 'Unable to get summary'
@@ -162,3 +300,4 @@ class ProductController {
 }
 
 module.exports = ProductController;
+

@@ -1,10 +1,11 @@
+
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
 
 const authenticate = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
-        
+
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return res.status(401).json({
                 success: false,
@@ -13,10 +14,23 @@ const authenticate = async (req, res, next) => {
         }
 
         const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        
+
+        const decoded = jwt.verify(
+            token,
+            process.env.JWT_SECRET
+        );
+
+        if (!decoded.id) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid token'
+            });
+        }
+
         const [rows] = await pool.execute(
-            'SELECT id, fullname, email FROM users WHERE id = ?',
+            `SELECT id, fullname, email
+             FROM users
+             WHERE id = ?`,
             [decoded.id]
         );
 
@@ -27,14 +41,22 @@ const authenticate = async (req, res, next) => {
             });
         }
 
+        // This is the trusted logged-in user.
+        // Controllers/models should use req.user.id.
         req.user = rows[0];
+
         next();
+
     } catch (error) {
+        console.error('Authentication error:', error.message);
+
         return res.status(401).json({
             success: false,
-            message: 'Invalid token'
+            message: 'Invalid or expired token'
         });
     }
 };
 
-module.exports = { authenticate };
+module.exports = {
+    authenticate
+};
