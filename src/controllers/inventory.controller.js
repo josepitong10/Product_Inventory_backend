@@ -337,6 +337,32 @@ class InventoryController {
                 );
 
 
+                // =================================================
+// TOTAL CATEGORIES
+// =================================================
+
+const [totalCategories] =
+    await pool.execute(
+        `SELECT COUNT(*) AS total
+         FROM categories
+         WHERE created_by = ?`,
+        [userId]
+    );
+
+
+// =================================================
+// TOTAL SUPPLIERS
+// =================================================
+
+const [totalSuppliers] =
+    await pool.execute(
+        `SELECT COUNT(*) AS total
+         FROM suppliers
+         WHERE created_by = ?`,
+        [userId]
+    );
+
+
             // =================================================
             // RECENT TRANSACTIONS
             // =================================================
@@ -367,25 +393,27 @@ class InventoryController {
             // SEND RESPONSE
             // =================================================
 
-            res.json({
+  res.json({
+    success: true,
+    data: {
+        totalProducts:
+            totalProducts[0].total,
 
-                success: true,
+        totalCategories:
+            totalCategories[0].total,
 
-                data: {
+        totalSuppliers:
+            totalSuppliers[0].total,
 
-                    totalProducts:
-                        totalProducts[0].total,
+        lowStockItems:
+            lowStock[0].total,
 
-                    lowStockItems:
-                        lowStock[0].total,
+        totalTransactions:
+            totalTransactions[0].total,
 
-                    totalTransactions:
-                        totalTransactions[0].total,
-
-                    recentTransactions
-                }
-
-            });
+        recentTransactions
+    }
+});
 
         } catch (error) {
 

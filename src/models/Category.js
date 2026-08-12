@@ -1,22 +1,67 @@
 const { pool } = require('../config/database');
 
 class Category {
-    static async getAll() {
-        const [rows] = await pool.execute('SELECT * FROM categories ORDER BY category_name');
+
+    // ============================================
+    // GET ONLY LOGGED-IN USER'S CATEGORIES
+    // ============================================
+    static async getAll(userId) {
+
+        const [rows] = await pool.execute(
+            `SELECT *
+             FROM categories
+             WHERE created_by = ?
+             ORDER BY category_name`,
+            [userId]
+        );
+
         return rows;
     }
 
-    static async getById(id) {
-        const [rows] = await pool.execute('SELECT * FROM categories WHERE id = ?', [id]);
+
+    // ============================================
+    // GET ONE CATEGORY ONLY IF USER OWNS IT
+    // ============================================
+    static async getById(id, userId) {
+
+        const [rows] = await pool.execute(
+            `SELECT *
+             FROM categories
+             WHERE id = ?
+               AND created_by = ?`,
+            [id, userId]
+        );
+
         return rows[0] || null;
     }
 
+
+    // ============================================
+    // CREATE CATEGORY FOR LOGGED-IN USER
+    // ============================================
     static async create(categoryData) {
-        const { category_name, description } = categoryData;
+
+        const {
+            category_name,
+            description,
+            created_by
+        } = categoryData;
+
         const [result] = await pool.execute(
-            'INSERT INTO categories (category_name, description) VALUES (?, ?)',
-            [category_name, description]
+            `INSERT INTO categories
+                (
+                    category_name,
+                    description,
+                    created_by
+                )
+             VALUES (?, ?, ?)`,
+            [
+                category_name,
+                description || null,
+                created_by
+            ]
         );
+
         return result.insertId;
     }
 }
