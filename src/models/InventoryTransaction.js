@@ -21,21 +21,33 @@ class InventoryTransaction {
         return result.insertId;
     }
 
-    static async getHistory(product_id = null, limit = 100) {
-        let sql = 'SELECT * FROM transaction_summary';
-        const params = [];
+    static async getHistory(product_id = null, limit = 100, userId) {
 
-        if (product_id) {
-            sql += ' WHERE product_id = ?';
-            params.push(product_id);
-        }
+    let sql = `
+        SELECT
+            t.*,
+            p.product_name
+        FROM inventory_transactions t
+        JOIN products p
+            ON t.product_id = p.id
+        WHERE t.user_id = ?
+          AND p.created_by = ?
+    `;
 
-        sql += ' LIMIT ?';
-        params.push(limit);
+    const params = [userId, userId];
 
-        const [rows] = await pool.execute(sql, params);
-        return rows;
+    if (product_id) {
+        sql += ` AND t.product_id = ?`;
+        params.push(product_id);
     }
+
+    sql += ` ORDER BY t.created_at DESC LIMIT ?`;
+    params.push(Number(limit));
+
+    const [rows] = await pool.execute(sql, params);
+
+    return rows;
+}
 }
 
 module.exports = InventoryTransaction;
