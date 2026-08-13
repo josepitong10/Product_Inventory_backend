@@ -60,6 +60,9 @@ class CategoryController {
             // Get it from authenticated JWT.
             const userId = req.user.id;
 
+            console.log('LOGGED IN USER:', req.user);
+            console.log('USER ID:', userId);
+
             const categoryId =
                 await Category.create({
                     category_name,
