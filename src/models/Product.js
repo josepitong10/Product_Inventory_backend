@@ -156,46 +156,127 @@ class Product {
     // UPDATE ONLY USER'S PRODUCT
     // ============================================
 
-    static async update(id, updateData, userId) {
+static async update(id, updateData, userId) {
 
-        const fields = [];
-        const params = [];
+    // ============================================
+    // CHECK IF PRODUCT BELONGS TO USER
+    // ============================================
 
-        const allowedFields = [
-            'product_name',
-            'category_id',
-            'supplier_id',
-            'price',
-            'quantity',
-            'minimum_stock',
-            'description'
-        ];
+    const [productRows] = await pool.execute(
+        `SELECT id
+         FROM products
+         WHERE id = ?
+           AND created_by = ?`,
+        [id, userId]
+    );
 
-        for (const field of allowedFields) {
-
-            if (updateData[field] !== undefined) {
-                fields.push(`${field} = ?`);
-                params.push(updateData[field]);
-            }
-        }
-
-        if (fields.length === 0) {
-            return false;
-        }
-
-        params.push(id);
-        params.push(userId);
-
-        const [result] = await pool.execute(
-            `UPDATE products
-             SET ${fields.join(', ')}
-             WHERE id = ?
-               AND created_by = ?`,
-            params
+    if (productRows.length === 0) {
+        const error = new Error(
+            'Product does not belong to the logged-in user'
         );
 
-        return result.affectedRows > 0;
+        error.statusCode = 403;
+        throw error;
     }
+
+
+    // ============================================
+    // CHECK CATEGORY OWNERSHIP
+    // Only if category_id is being changed
+    // ============================================
+
+    if (updateData.category_id !== undefined) {
+
+        const [categoryRows] = await pool.execute(
+            `SELECT id
+             FROM categories
+             WHERE id = ?
+               AND created_by = ?`,
+            [updateData.category_id, userId]
+        );
+
+        if (categoryRows.length === 0) {
+
+            const error = new Error(
+                'Category does not belong to the logged-in user'
+            );
+
+            error.statusCode = 403;
+            throw error;
+        }
+    }
+
+
+    // ============================================
+    // CHECK SUPPLIER OWNERSHIP
+    // Only if supplier_id is being changed
+    // ============================================
+
+    if (updateData.supplier_id !== undefined) {
+
+        const [supplierRows] = await pool.execute(
+            `SELECT id
+             FROM suppliers
+             WHERE id = ?
+               AND created_by = ?`,
+            [updateData.supplier_id, userId]
+        );
+
+        if (supplierRows.length === 0) {
+
+            const error = new Error(
+                'Supplier does not belong to the logged-in user'
+            );
+
+            error.statusCode = 403;
+            throw error;
+        }
+    }
+
+
+    // ============================================
+    // UPDATE PRODUCT
+    // ============================================
+
+    const fields = [];
+    const params = [];
+
+    const allowedFields = [
+        'product_name',
+        'category_id',
+        'supplier_id',
+        'price',
+        'quantity',
+        'minimum_stock',
+        'description'
+    ];
+
+    for (const field of allowedFields) {
+
+        if (updateData[field] !== undefined) {
+
+            fields.push(`${field} = ?`);
+            params.push(updateData[field]);
+        }
+    }
+
+    if (fields.length === 0) {
+        return false;
+    }
+
+    params.push(id);
+    params.push(userId);
+
+    const [result] = await pool.execute(
+        `UPDATE products
+         SET ${fields.join(', ')}
+         WHERE id = ?
+           AND created_by = ?`,
+        params
+    );
+
+    return result.affectedRows > 0;
+}
 
 
     // ============================================
