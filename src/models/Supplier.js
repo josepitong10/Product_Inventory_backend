@@ -39,38 +39,38 @@ class Supplier {
     // ============================================
     static async create(supplierData) {
 
-        const {
+    const {
+        supplier_name,
+        contact_person,
+        email,
+        phone,
+        address,
+        created_by
+    } = supplierData;
+
+    const [result] = await pool.execute(
+        `INSERT INTO suppliers
+        (
             supplier_name,
             contact_person,
             email,
             phone,
             address,
             created_by
-        } = supplierData;
+        )
+        VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+            supplier_name,
+            contact_person || null,
+            email || null,
+            phone || null,
+            address || null,
+            created_by
+        ]
+    );
 
-        const [result] = await pool.execute(
-            `INSERT INTO suppliers
-            (
-                supplier_name,
-                contact_person,
-                email,
-                phone,
-                address,
-                created_by
-            )
-            VALUES (?, ?, ?, ?, ?, ?)`,
-            [
-                supplier_name,
-                contact_person,
-                email,
-                phone,
-                address,
-                created_by
-            ]
-        );
-
-        return result.insertId;
-    }
+    return result.insertId;
+}
 }
 
 module.exports = Supplier;

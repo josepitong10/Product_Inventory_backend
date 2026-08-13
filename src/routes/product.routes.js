@@ -3,6 +3,8 @@ const router = express.Router();
 const ProductController = require('../controllers/product.controller');
 const { authenticate } = require('../middleware/auth');
 
+router.use(authenticate);
+
 router.get('/', ProductController.getAll);
 router.get('/low-stock', authenticate, ProductController.getLowStock);
 router.get('/summary', authenticate, ProductController.getSummary);
