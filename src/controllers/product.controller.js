@@ -136,13 +136,15 @@ class ProductController {
 
         } catch (error) {
 
-            console.error('CREATE PRODUCT ERROR:', error);
+    console.error('CREATE PRODUCT ERROR:', error);
 
-            res.status(500).json({
-                success: false,
-                message: 'Unable to create product'
-            });
-        }
+    const statusCode = error.statusCode || 500;
+
+    res.status(statusCode).json({
+        success: false,
+        message: error.message || 'Unable to create product'
+    });
+}
     }
 
 
