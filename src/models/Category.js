@@ -64,6 +64,29 @@ class Category {
 
         return result.insertId;
     }
+
+    static async findOrCreate(categoryName, userId) {
+    const [rows] = await pool.execute(
+        `SELECT id
+         FROM categories
+         WHERE category_name = ?
+           AND created_by = ?`,
+        [categoryName, userId]
+    );
+
+    if (rows.length > 0) {
+        return rows[0].id;
+    }
+
+    const [result] = await pool.execute(
+        `INSERT INTO categories
+            (category_name, description, created_by)
+         VALUES (?, ?, ?)`,
+        [categoryName, null, userId]
+    );
+
+    return result.insertId;
+}
 }
 
 module.exports = Category;

@@ -71,6 +71,43 @@ class Supplier {
 
     return result.insertId;
 }
+
+static async findOrCreate(supplierName, userId) {
+    const [rows] = await pool.execute(
+        `SELECT id
+         FROM suppliers
+         WHERE supplier_name = ?
+           AND created_by = ?`,
+        [supplierName, userId]
+    );
+
+    if (rows.length > 0) {
+        return rows[0].id;
+    }
+
+    const [result] = await pool.execute(
+        `INSERT INTO suppliers
+            (
+                supplier_name,
+                contact_person,
+                email,
+                phone,
+                address,
+                created_by
+            )
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+            supplierName,
+            null,
+            null,
+            null,
+            null,
+            userId
+        ]
+    );
+
+    return result.insertId;
+}
 }
 
 module.exports = Supplier;
