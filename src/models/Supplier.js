@@ -1,22 +1,74 @@
 const { pool } = require('../config/database');
 
 class Supplier {
-    static async getAll() {
-        const [rows] = await pool.execute('SELECT * FROM suppliers ORDER BY supplier_name');
+
+    // ============================================
+    // GET ONLY USER'S SUPPLIERS
+    // ============================================
+    static async getAll(userId) {
+        const [rows] = await pool.execute(
+            `SELECT *
+             FROM suppliers
+             WHERE created_by = ?
+             ORDER BY supplier_name`,
+            [userId]
+        );
+
         return rows;
     }
 
-    static async getById(id) {
-        const [rows] = await pool.execute('SELECT * FROM suppliers WHERE id = ?', [id]);
+
+    // ============================================
+    // GET ONE SUPPLIER ONLY IF USER OWNS IT
+    // ============================================
+    static async getById(id, userId) {
+        const [rows] = await pool.execute(
+            `SELECT *
+             FROM suppliers
+             WHERE id = ?
+               AND created_by = ?`,
+            [id, userId]
+        );
+
         return rows[0] || null;
     }
 
+
+    // ============================================
+    // CREATE SUPPLIER FOR LOGGED-IN USER
+    // ============================================
     static async create(supplierData) {
-        const { supplier_name, contact_person, email, phone, address } = supplierData;
+
+        const {
+            supplier_name,
+            contact_person,
+            email,
+            phone,
+            address,
+            created_by
+        } = supplierData;
+
         const [result] = await pool.execute(
-            'INSERT INTO suppliers (supplier_name, contact_person, email, phone, address) VALUES (?, ?, ?, ?, ?)',
-            [supplier_name, contact_person, email, phone, address]
+            `INSERT INTO suppliers
+            (
+                supplier_name,
+                contact_person,
+                email,
+                phone,
+                address,
+                created_by
+            )
+            VALUES (?, ?, ?, ?, ?, ?)`,
+            [
+                supplier_name,
+                contact_person,
+                email,
+                phone,
+                address,
+                created_by
+            ]
         );
+
         return result.insertId;
     }
 }

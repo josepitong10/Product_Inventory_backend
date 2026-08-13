@@ -1,15 +1,32 @@
 const Supplier = require('../models/Supplier');
 
 class SupplierController {
+
+    // ============================================
+    // GET USER'S SUPPLIERS ONLY
+    // ============================================
     static async getAll(req, res) {
+
         try {
-            const suppliers = await Supplier.getAll();
+
+            const userId = req.user.id;
+
+            const suppliers =
+                await Supplier.getAll(userId);
+
             res.json({
                 success: true,
                 count: suppliers.length,
                 data: suppliers
             });
+
         } catch (error) {
+
+            console.error(
+                'GET SUPPLIERS ERROR:',
+                error
+            );
+
             res.status(500).json({
                 success: false,
                 message: 'Unable to retrieve suppliers'
@@ -17,9 +34,22 @@ class SupplierController {
         }
     }
 
+
+    // ============================================
+    // CREATE SUPPLIER FOR LOGGED-IN USER
+    // ============================================
     static async create(req, res) {
+
         try {
-            const { supplier_name, contact_person, email, phone, address } = req.body;
+
+            const {
+                supplier_name,
+                contact_person,
+                email,
+                phone,
+                address
+            } = req.body;
+
             if (!supplier_name) {
                 return res.status(400).json({
                     success: false,
@@ -27,15 +57,43 @@ class SupplierController {
                 });
             }
 
-            const supplierId = await Supplier.create({ supplier_name, contact_person, email, phone, address });
-            const supplier = await Supplier.getById(supplierId);
+            // Get owner from JWT
+            const userId = req.user.id;
+
+            console.log(
+                'CREATING SUPPLIER FOR USER:',
+                userId
+            );
+
+            const supplierId =
+                await Supplier.create({
+                    supplier_name,
+                    contact_person,
+                    email,
+                    phone,
+                    address,
+                    created_by: userId
+                });
+
+            const supplier =
+                await Supplier.getById(
+                    supplierId,
+                    userId
+                );
 
             res.status(201).json({
                 success: true,
                 message: 'Supplier created successfully',
                 data: supplier
             });
+
         } catch (error) {
+
+            console.error(
+                'CREATE SUPPLIER ERROR:',
+                error
+            );
+
             res.status(500).json({
                 success: false,
                 message: 'Unable to create supplier'
