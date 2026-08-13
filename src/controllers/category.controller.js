@@ -81,16 +81,16 @@ class CategoryController {
 
         } catch (error) {
 
-            console.error(
-                'CREATE CATEGORY ERROR:',
-                error
-            );
+    console.error('CREATE CATEGORY ERROR:', error);
+    console.error('ERROR MESSAGE:', error.message);
+    console.error('ERROR CODE:', error.code);
+    console.error('ERROR SQL:', error.sql);
 
-            res.status(500).json({
-                success: false,
-                message: 'Unable to create category'
-            });
-        }
+    res.status(500).json({
+        success: false,
+        message: error.message || 'Unable to create category'
+    });
+}
     }
 }
 
