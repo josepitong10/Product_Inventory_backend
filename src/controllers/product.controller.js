@@ -1,5 +1,6 @@
-
 const Product = require('../models/Product');
+const Category = require('../models/Category');
+const Supplier = require('../models/Supplier');
 
 class ProductController {
 
@@ -75,77 +76,113 @@ class ProductController {
     }
 
 
-    // ============================================
-    // CREATE USER PRODUCT
-    // ============================================
 
-    static async create(req, res) {
+// ============================================
+// CREATE USER PRODUCT
+// ============================================
 
-        try {
+static async create(req, res) {
 
-            const {
-                product_name,
-                category_id,
-                supplier_id,
-                price,
-                quantity,
-                minimum_stock,
-                description
-            } = req.body;
+    try {
 
-            if (
-                !product_name ||
-                !category_id ||
-                !supplier_id ||
-                price === undefined
-            ) {
+        const {
+            product_name,
+            category_name,
+            supplier_name,
+            price,
+            quantity,
+            minimum_stock,
+            description
+        } = req.body;
 
-                return res.status(400).json({
-                    success: false,
-                    message:
-                        'Product name, category, supplier, and price are required'
-                });
-            }
+        const userId = req.user.id;
 
-            // NEVER get created_by from req.body.
-            // Get it from the authenticated JWT.
+        // ============================================
+        // VALIDATION
+        // ============================================
 
-            const productId =
-                await Product.create({
-                    product_name,
-                    category_id,
-                    supplier_id,
-                    price,
-                    quantity,
-                    minimum_stock,
-                    description,
-                    created_by: req.user.id
-                });
-
-            const product =
-                await Product.getById(
-                    productId,
-                    req.user.id
-                );
-
-            res.status(201).json({
-                success: true,
-                message: 'Product created successfully',
-                data: product
+        if (
+            !product_name ||
+            !category_name ||
+            !supplier_name ||
+            price === undefined
+        ) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    'Product name, category name, supplier name, and price are required'
             });
+        }
 
-        } catch (error) {
+        // ============================================
+        // FIND OR CREATE CATEGORY
+        // ============================================
 
-    console.error('CREATE PRODUCT ERROR:', error);
+        const categoryId = await Category.findOrCreate(
+            category_name.trim(),
+            userId
+        );
 
-    const statusCode = error.statusCode || 500;
+        // ============================================
+        // FIND OR CREATE SUPPLIER
+        // ============================================
 
-    res.status(statusCode).json({
-        success: false,
-        message: error.message || 'Unable to create product'
-    });
-}
+        const supplierId = await Supplier.findOrCreate(
+            supplier_name.trim(),
+            userId
+        );
+
+        // ============================================
+        // CREATE PRODUCT
+        // ============================================
+
+        const productId = await Product.create({
+
+            product_name: product_name.trim(),
+
+            category_id: categoryId,
+
+            supplier_id: supplierId,
+
+            price,
+
+            quantity: quantity || 0,
+
+            minimum_stock: minimum_stock || 5,
+
+            description: description || null,
+
+            created_by: userId
+        });
+
+        // ============================================
+        // GET CREATED PRODUCT
+        // ============================================
+
+        const product = await Product.getById(
+            productId,
+            userId
+        );
+
+        res.status(201).json({
+            success: true,
+            message: 'Product created successfully',
+            data: product
+        });
+
+    } catch (error) {
+
+        console.error('CREATE PRODUCT ERROR:', error);
+
+        const statusCode = error.statusCode || 500;
+
+        res.status(statusCode).json({
+            success: false,
+            message:
+                error.message || 'Unable to create product'
+        });
     }
+}
 
 
     // ============================================

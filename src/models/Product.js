@@ -59,101 +59,98 @@ class Product {
 
 
     // ============================================
+// CREATE PRODUCT
+// ============================================
+
+static async create(productData) {
+
+    const {
+        product_name,
+        category_id,
+        supplier_id,
+        price,
+        quantity,
+        minimum_stock,
+        description,
+        created_by
+    } = productData;
+
+    // ============================================
+    // CHECK CATEGORY OWNERSHIP
+    // ============================================
+
+    const [categoryRows] = await pool.execute(
+        `SELECT id
+         FROM categories
+         WHERE id = ?
+           AND created_by = ?`,
+        [category_id, created_by]
+    );
+
+    if (categoryRows.length === 0) {
+
+        const error = new Error(
+            'Category does not belong to the logged-in user'
+        );
+
+        error.statusCode = 403;
+
+        throw error;
+    }
+
+    // ============================================
+    // CHECK SUPPLIER OWNERSHIP
+    // ============================================
+
+    const [supplierRows] = await pool.execute(
+        `SELECT id
+         FROM suppliers
+         WHERE id = ?
+           AND created_by = ?`,
+        [supplier_id, created_by]
+    );
+
+    if (supplierRows.length === 0) {
+
+        const error = new Error(
+            'Supplier does not belong to the logged-in user'
+        );
+
+        error.statusCode = 403;
+
+        throw error;
+    }
+
+    // ============================================
     // CREATE PRODUCT
     // ============================================
 
-    static async create(productData) {
-
-        const {
+    const [result] = await pool.execute(`
+        INSERT INTO products
+        (
             product_name,
-            category_name,
-            supplier_name,
+            category_id,
+            supplier_id,
             price,
             quantity,
             minimum_stock,
             description,
             created_by
-        } = productData;
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+        product_name,
+        category_id,
+        supplier_id,
+        price,
+        quantity || 0,
+        minimum_stock || 5,
+        description || null,
+        created_by
+    ]);
 
-
-        // ============================================
-        // VALIDATE CATEGORY NAME
-        // ============================================
-
-        if (!category_name || !category_name.trim()) {
-            const error = new Error(
-                'Category name is required'
-            );
-
-            error.statusCode = 400;
-            throw error;
-        }
-
-
-        // ============================================
-        // VALIDATE SUPPLIER NAME
-        // ============================================
-
-        if (!supplier_name || !supplier_name.trim()) {
-            const error = new Error(
-                'Supplier name is required'
-            );
-
-            error.statusCode = 400;
-            throw error;
-        }
-
-
-        // ============================================
-        // FIND OR CREATE USER'S CATEGORY
-        // ============================================
-
-        const categoryId = await Category.findOrCreate(
-            category_name.trim(),
-            created_by
-        );
-
-
-        // ============================================
-        // FIND OR CREATE USER'S SUPPLIER
-        // ============================================
-
-        const supplierId = await Supplier.findOrCreate(
-            supplier_name.trim(),
-            created_by
-        );
-
-
-        // ============================================
-        // CREATE PRODUCT
-        // ============================================
-
-        const [result] = await pool.execute(`
-            INSERT INTO products
-            (
-                product_name,
-                category_id,
-                supplier_id,
-                price,
-                quantity,
-                minimum_stock,
-                description,
-                created_by
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `, [
-            product_name,
-            categoryId,
-            supplierId,
-            price,
-            quantity || 0,
-            minimum_stock || 5,
-            description || null,
-            created_by
-        ]);
-
-        return result.insertId;
-    }
+    return result.insertId;
+}
 
 
     // ============================================
