@@ -5,6 +5,6 @@ const { authenticate } = require('../middleware/auth');
 
 router.use(authenticate);
 router.get('/', SupplierController.getAll);
-router.post('/', authenticate, SupplierController.create);
+router.post('/', SupplierController.create);
 
 module.exports = router;

@@ -5,6 +5,6 @@ const { authenticate } = require('../middleware/auth');
 
 router.use(authenticate);
 router.get('/', CategoryController.getAll);
-router.post('/', authenticate, CategoryController.create);
+router.post('/', CategoryController.create);
 
 module.exports = router;

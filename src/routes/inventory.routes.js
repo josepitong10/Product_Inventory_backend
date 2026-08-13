@@ -5,9 +5,9 @@ const { authenticate } = require('../middleware/auth');
 
 router.use(authenticate);
 
-router.post('/stock-in', authenticate, InventoryController.stockIn);
-router.post('/stock-out', authenticate, InventoryController.stockOut);
-router.get('/history', authenticate, InventoryController.getHistory);
-router.get('/dashboard', authenticate, InventoryController.getDashboardStats);
+router.post('/stock-in', InventoryController.stockIn);
+router.post('/stock-out', InventoryController.stockOut);
+router.get('/history', InventoryController.getHistory);
+router.get('/dashboard', InventoryController.getDashboardStats);
 
 module.exports = router;

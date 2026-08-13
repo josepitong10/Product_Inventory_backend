@@ -38,68 +38,58 @@ class SupplierController {
     // ============================================
     // CREATE SUPPLIER FOR LOGGED-IN USER
     // ============================================
-    static async create(req, res) {
+  static async create(req, res) {
+    try {
 
-        try {
+        const {
+            supplier_name,
+            contact_person,
+            email,
+            phone,
+            address
+        } = req.body;
 
-            const {
-                supplier_name,
-                contact_person,
-                email,
-                phone,
-                address
-            } = req.body;
-
-            if (!supplier_name) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Supplier name is required'
-                });
-            }
-
-            // Get owner from JWT
-            const userId = req.user.id;
-
-            console.log(
-                'CREATING SUPPLIER FOR USER:',
-                userId
-            );
-
-            const supplierId =
-                await Supplier.create({
-                    supplier_name,
-                    contact_person,
-                    email,
-                    phone,
-                    address,
-                    created_by: userId
-                });
-
-            const supplier =
-                await Supplier.getById(
-                    supplierId,
-                    userId
-                );
-
-            res.status(201).json({
-                success: true,
-                message: 'Supplier created successfully',
-                data: supplier
-            });
-
-        } catch (error) {
-
-            console.error(
-                'CREATE SUPPLIER ERROR:',
-                error
-            );
-
-            res.status(500).json({
+        if (!supplier_name) {
+            return res.status(400).json({
                 success: false,
-                message: 'Unable to create supplier'
+                message: 'Supplier name is required'
             });
         }
+
+        const userId = req.user.id;
+
+        console.log('CREATING SUPPLIER FOR USER:', userId);
+
+        const supplierId = await Supplier.create({
+            supplier_name,
+            contact_person,
+            email,
+            phone,
+            address,
+            created_by: userId
+        });
+
+        const supplier = await Supplier.getById(
+            supplierId,
+            userId
+        );
+
+        res.status(201).json({
+            success: true,
+            message: 'Supplier created successfully',
+            data: supplier
+        });
+
+    } catch (error) {
+
+        console.error('CREATE SUPPLIER ERROR:', error);
+
+        res.status(500).json({
+            success: false,
+            message: 'Unable to create supplier'
+        });
     }
+}
 }
 
 module.exports = SupplierController;
