@@ -9,5 +9,7 @@ router.post('/stock-in', InventoryController.stockIn);
 router.post('/stock-out', InventoryController.stockOut);
 router.get('/history', InventoryController.getHistory);
 router.get('/dashboard', InventoryController.getDashboardStats);
+router.get('/low-stock', InventoryController.getLowStock);
+router.get('/summary', InventoryController.getSummary);
 
 module.exports = router;

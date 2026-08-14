@@ -285,6 +285,46 @@ class InventoryController {
     }
 
 
+    static async getLowStock(req, res) {
+    try {
+        const items = await Product.getLowStock(req.user.id);
+
+        res.json({
+            success: true,
+            count: items.length,
+            data: items
+        });
+
+    } catch (error) {
+        console.error('GET LOW STOCK ERROR:', error);
+
+        res.status(500).json({
+            success: false,
+            message: 'Unable to get low stock items'
+        });
+    }
+}
+
+static async getSummary(req, res) {
+    try {
+        const products = await Product.getSummary(req.user.id);
+
+        res.json({
+            success: true,
+            count: products.length,
+            data: products
+        });
+
+    } catch (error) {
+        console.error('GET INVENTORY SUMMARY ERROR:', error);
+
+        res.status(500).json({
+            success: false,
+            message: 'Unable to get inventory summary'
+        });
+    }
+}
+
     // =====================================================
     // USER DASHBOARD STATISTICS
     // =====================================================
