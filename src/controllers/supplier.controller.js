@@ -90,6 +90,103 @@ class SupplierController {
         });
     }
 }
+
+// GET ONE SUPPLIER
+static async getById(req, res) {
+    try {
+        const supplier = await Supplier.getById(
+            req.params.id,
+            req.user.id
+        );
+
+        if (!supplier) {
+            return res.status(404).json({
+                success: false,
+                message: 'Supplier not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: supplier
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            success: false,
+            message: 'Unable to load supplier'
+        });
+    }
+}
+
+// UPDATE SUPPLIER
+static async update(req, res) {
+    try {
+        const updated = await Supplier.update(
+            req.params.id,
+            req.body,
+            req.user.id
+        );
+
+        if (!updated) {
+            return res.status(404).json({
+                success: false,
+                message: 'Supplier not found'
+            });
+        }
+
+        const supplier = await Supplier.getById(
+            req.params.id,
+            req.user.id
+        );
+
+        res.json({
+            success: true,
+            message: 'Supplier updated successfully',
+            data: supplier
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            success: false,
+            message: 'Unable to update supplier'
+        });
+    }
+}
+
+// DELETE SUPPLIER
+static async delete(req, res) {
+    try {
+        const deleted = await Supplier.delete(
+            req.params.id,
+            req.user.id
+        );
+
+        if (!deleted) {
+            return res.status(404).json({
+                success: false,
+                message: 'Supplier not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Supplier deleted successfully'
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            success: false,
+            message: 'Unable to delete supplier'
+        });
+    }
+}
 }
 
 module.exports = SupplierController;

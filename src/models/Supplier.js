@@ -108,6 +108,61 @@ static async findOrCreate(supplierName, userId) {
 
     return result.insertId;
 }
+
+    // ============================================
+    // UPDATE ONLY USER'S SUPPLIER
+    // ============================================
+    static async update(id, supplierData, userId) {
+
+        const {
+            supplier_name,
+            contact_person,
+            email,
+            phone,
+            address
+        } = supplierData;
+
+        const [result] = await pool.execute(
+            `UPDATE suppliers
+             SET
+                supplier_name = ?,
+                contact_person = ?,
+                email = ?,
+                phone = ?,
+                address = ?
+             WHERE id = ?
+               AND created_by = ?`,
+            [
+                supplier_name,
+                contact_person || null,
+                email || null,
+                phone || null,
+                address || null,
+                id,
+                userId
+            ]
+        );
+
+        return result.affectedRows > 0;
+    }
+
+
+    // ============================================
+    // DELETE ONLY USER'S SUPPLIER
+    // ============================================
+    static async delete(id, userId) {
+
+        const [result] = await pool.execute(
+            `DELETE FROM suppliers
+             WHERE id = ?
+               AND created_by = ?`,
+            [id, userId]
+        );
+
+        return result.affectedRows > 0;
+    }
 }
+
+
 
 module.exports = Supplier;
