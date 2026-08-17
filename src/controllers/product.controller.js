@@ -82,13 +82,11 @@ class ProductController {
 // ============================================
 
 static async create(req, res) {
-
     try {
-
         const {
             product_name,
-            category_name,
-            supplier_name,
+            category_id,
+            supplier_id,
             price,
             quantity,
             minimum_stock,
@@ -103,55 +101,29 @@ static async create(req, res) {
 
         if (
             !product_name ||
-            !category_name ||
-            !supplier_name ||
+            !category_id ||
+            !supplier_id ||
             price === undefined
         ) {
             return res.status(400).json({
                 success: false,
                 message:
-                    'Product name, category name, supplier name, and price are required'
+                    'Product name, category, supplier, and price are required'
             });
         }
-
-        // ============================================
-        // FIND OR CREATE CATEGORY
-        // ============================================
-
-        const categoryId = await Category.findOrCreate(
-            category_name.trim(),
-            userId
-        );
-
-        // ============================================
-        // FIND OR CREATE SUPPLIER
-        // ============================================
-
-        const supplierId = await Supplier.findOrCreate(
-            supplier_name.trim(),
-            userId
-        );
 
         // ============================================
         // CREATE PRODUCT
         // ============================================
 
         const productId = await Product.create({
-
             product_name: product_name.trim(),
-
-            category_id: categoryId,
-
-            supplier_id: supplierId,
-
-            price,
-
+            category_id: category_id,
+            supplier_id: supplier_id,
+            price: price,
             quantity: quantity || 0,
-
             minimum_stock: minimum_stock || 5,
-
             description: description || null,
-
             created_by: userId
         });
 
@@ -183,7 +155,6 @@ static async create(req, res) {
         });
     }
 }
-
 
     // ============================================
     // UPDATE USER PRODUCT
